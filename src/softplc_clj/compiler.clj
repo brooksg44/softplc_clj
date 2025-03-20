@@ -111,18 +111,6 @@
            (parse-instruction-line (inc idx) trimmed))))
      lines)))
 
-(defn- compile-instructions
-  "Convert parsed instructions to executable code"
-  [parsed-instructions]
-  (let [network-groups (partition-by #(= (:instruction %) "NETWORK") parsed-instructions)
-        networks (filter #(not= (:instruction (first %)) "NETWORK") network-groups)]
-
-    (map-indexed
-     (fn [network-idx network]
-       {:network (inc network-idx)
-        :instructions (vec network)
-        :matrix-data (generate-matrix-data network)})
-     networks)))
 
 (defn- generate-matrix-data
   "Generate matrix representation for ladder visualization"
@@ -169,6 +157,20 @@
                next-row
                next-col
                (conj result element))))))
+
+(defn- compile-instructions
+  "Convert parsed instructions to executable code"
+  [parsed-instructions]
+  (let [network-groups (partition-by #(= (:instruction %) "NETWORK") parsed-instructions)
+        networks (filter #(not= (:instruction (first %)) "NETWORK") network-groups)]
+
+    (map-indexed
+     (fn [network-idx network]
+       {:network (inc network-idx)
+        :instructions (vec network)
+        :matrix-data (generate-matrix-data network)})
+     networks)))
+
 
 (defn load-program!
   "Load a PLC program from a file"

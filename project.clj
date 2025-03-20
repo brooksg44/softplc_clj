@@ -4,7 +4,7 @@
   :license {:name "GPLv3"
             :url "https://www.gnu.org/licenses/gpl-3.0.en.html"}
   :dependencies [[org.clojure/clojure "1.11.1"]
-                 [quil "4.3.1562"]  ; For GUI and visualization
+                 [quil "4.3.1563"]  ; For GUI and visualization
                  [org.clojure/data.json "2.4.0"]  ; JSON handling
                  [org.clojure/tools.cli "1.0.219"]  ; Command-line parsing
                  [cheshire "5.11.0"]  ; JSON parsing/generation

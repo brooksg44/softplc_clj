@@ -9,4 +9,6 @@ pom.xml.asc
 /.nrepl-port
 /.clj-kondo
 /.lsp
+/.calva
 /target*
+src/.DS_Store
