@@ -1,0 +1,20 @@
+# Program to drive a Simple Conveyor
+# X1=EStop, X2=Stop, X3=Start, Y1=Belt Conveyor
+#
+# This program implements a simple start/stop circuit with an emergency stop.
+# When Start (X3) is pressed, the conveyor (Y1) runs.
+# Once running, the conveyor continues even if Start is released.
+# The conveyor stops if Stop (X2) is pressed or EStop (X1) is pressed.
+
+NETWORK 1
+# First rung implements start/stop logic with E-Stop
+STR X1    # E-Stop (normally closed)
+AND X2    # Stop Button (normally closed)
+STR X3    # Start Button
+OR Y1     # Latch the output
+ANDSTR    # AND with the E-Stop and Stop conditions
+OUT Y1    # Output to Motor Contactor
+
+NETWORK 2
+# End of program
+END
