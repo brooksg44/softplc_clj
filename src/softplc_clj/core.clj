@@ -117,7 +117,7 @@
   (start!)
 
   ;; Load and run a specific program
-  (runtime/load-compile-and-run! "simpleconveyor.txt")
+  (runtime/load-compile-and-run! "simpleconveyor_subr.txt")
 
   ;; Manipulate data table values
   (dt/set-bool! "X1" true)

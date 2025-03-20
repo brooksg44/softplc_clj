@@ -84,11 +84,11 @@
 (defn- setup-ui-components!
   "Setup UI components like buttons and dropdowns"
   []
-  (let [buttons [(create-button :monitor 150 10 100 30 "Monitor" 
+  (let [buttons [(create-button :monitor 600 10 100 30 "Monitor" 
                                #(swap! ui-state update :monitoring not))
-                (create-button :show-networks 150 50 140 30 "Show Networks" 
+                (create-button :show-networks 200 50 140 30 "Show Networks" 
                               show-networks-callback)
-                (create-button :show-ladder 150 90 140 30 "Show Ladder" 
+                (create-button :show-ladder 200 90 140 30 "Show Ladder" 
                               show-ladder-callback)
                 (create-button :toggle-data-table 700 10 120 30 "Data Table" 
                               #(swap! ui-state update :show-data-table not))]
@@ -320,7 +320,7 @@
     (draw-dropdown dropdown))
   
   ;; Draw PLC stats
-  (draw-plc-stats 280 10)
+  (draw-plc-stats 350 10)
   
   ;; Draw ladder diagram
   (if (:show-data-table @ui-state)
