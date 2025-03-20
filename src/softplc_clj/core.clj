@@ -1,48 +1,134 @@
-(ns softplc_clj.core
-  (:require [quil.core :as q]
-            [quil.middleware :as m]))
+(ns softplc-clj.core
+  (:require [softplc-clj.config :as config]
+            [softplc-clj.plc-runtime :as runtime]
+            [softplc-clj.compiler :as compiler]
+            [softplc-clj.data-table :as dt]
+            [softplc-clj.gui :as gui]
+            [clojure.tools.cli :refer [parse-opts]]
+            [clojure.java.io :as io])
+  (:gen-class))
 
-(defn setup []
-  ; Set frame rate to 30 frames per second.
-  (q/frame-rate 30)
-  ; Set color mode to HSB (HSV) instead of default RGB.
-  (q/color-mode :hsb)
-  ; setup function returns initial state. It contains
-  ; circle color and position.
-  {:color 0
-   :angle 0})
+;; Command-line options
+(def cli-options
+  [["-p" "--program PROGRAM" "PLC Program file to load"
+    :default "simpleconveyor.txt"]
+   ["-s" "--scan-rate RATE" "PLC Scan rate in milliseconds"
+    :default 500
+    :parse-fn #(Integer/parseInt %)
+    :validate [#(< 0 % 10000) "Must be a number between 0 and 10000"]]
+   ["-c" "--config CONFIG" "Configuration file"
+    :default "config.edn"]
+   ["-h" "--help"]])
 
-(defn update-state [state]
-  ; Update sketch state by changing circle color and position.
-  {:color (mod (+ (:color state) 0.7) 255)
-   :angle (+ (:angle state) 0.1)})
+(defn usage
+  "Format usage instructions"
+  [options-summary]
+  (->> ["SoftPLC_Clj - A Clojure implementation of a Soft PLC"
+        ""
+        "Usage: softplc-clj [options]"
+        ""
+        "Options:"
+        options-summary
+        ""
+        "Examples:"
+        "  softplc-clj -p myprogram.txt -s 100"]
+       (clojure.string/join \newline)))
 
-(defn draw-state [state]
-  ; Clear the sketch by filling it with light-grey color.
-  (q/background 240)
-  ; Set circle color.
-  (q/fill (:color state) 255 255)
-  ; Calculate x and y coordinates of the circle.
-  (let [angle (:angle state)
-        x (* 150 (q/cos angle))
-        y (* 150 (q/sin angle))]
-    ; Move origin point to the center of the sketch.
-    (q/with-translation [(/ (q/width) 2)
-                         (/ (q/height) 2)]
-      ; Draw the circle.
-      (q/ellipse x y 100 100))))
+(defn error-msg
+  "Format error message"
+  [errors]
+  (str "The following errors occurred while parsing your command:\n\n"
+       (clojure.string/join \newline errors)))
 
+(defn validate-args
+  "Validate command line arguments"
+  [args]
+  (let [{:keys [options arguments errors summary]} (parse-opts args cli-options)]
+    (cond
+      (:help options) ; help => exit OK with usage summary
+      {:exit-message (usage summary) :ok? true}
 
-(q/defsketch softplc_clj
-  :title "You spin my circle right round"
-  :size [500 500]
-  ; setup function called only once, during sketch initialization.
-  :setup setup
-  ; update-state is called on each iteration before draw-state.
-  :update update-state
-  :draw draw-state
-  :features [:keep-on-top]
-  ; This sketch uses functional-mode middleware.
-  ; Check quil wiki for more info about middlewares and particularly
-  ; fun-mode.
-  :middleware [m/fun-mode])
+      errors ; errors => exit with description of errors
+      {:exit-message (error-msg errors) :ok? false}
+
+      :else ; validated args
+      {:options options})))
+
+(defn exit [status msg]
+  (println msg)
+  (System/exit status))
+
+(defn init-resources!
+  "Make sure resources directory exists"
+  []
+  (let [dirs ["resources/programs" "resources/images"]]
+    (doseq [dir dirs]
+      (.mkdirs (io/file dir)))))
+
+(defn copy-default-programs!
+  "Copy default program files if they don't exist"
+  []
+  (let [default-program "simpleconveyor.txt"
+        target-file (io/file "resources/programs" default-program)]
+    (when-not (.exists target-file)
+      (println "Copying default program:" default-program)
+      (io/make-parents target-file)
+      (spit target-file
+            "NETWORK 1\nSTR X1\nAND X2\nSTR X3\nOR Y1\nANDSTR\nOUT Y1\n\nNETWORK 2\nEND"))))
+
+(defn -main
+  "Main entry point for SoftPLC_Clj"
+  [& args]
+  (let [{:keys [options exit-message ok?]} (validate-args args)]
+    (if exit-message
+      (exit (if ok? 0 1) exit-message)
+
+      (do
+        ;; Initialize resources
+        (init-resources!)
+        (copy-default-programs!)
+
+        ;; Load configuration
+        (when (io/resource (:config options))
+          (config/load-config! (:config options)))
+
+        ;; Set configuration from command line
+        (config/set-config! :plc-program (:program options))
+        (config/set-config! :scan-rate (:scan-rate options))
+
+        ;; Initialize the application
+        (println "Starting SoftPLC_Clj...")
+        (println "Program:" (config/get-config :plc-program))
+        (println "Scan Rate:" (config/get-config :scan-rate) "ms")
+
+        ;; Initialize GUI (this will also start the PLC runtime)
+        (gui/init!)))))
+
+(defn start!
+  "Start the SoftPLC application programmatically (for REPL use)"
+  []
+  (init-resources!)
+  (copy-default-programs!)
+  (gui/init!))
+
+;; For REPL development
+(comment
+  ;; Start the application from REPL
+  (start!)
+
+  ;; Load and run a specific program
+  (runtime/load-compile-and-run! "simpleconveyor.txt")
+
+  ;; Manipulate data table values
+  (dt/set-bool! "X1" true)
+  (dt/set-bool! "X2" true)
+  (dt/set-bool! "X3" true)
+
+  ;; Get values
+  (dt/get-bool "Y1")
+
+  ;; Set scan rate
+  (runtime/set-scan-rate! 100)
+
+  ;; Get runtime stats
+  (runtime/get-stats))
