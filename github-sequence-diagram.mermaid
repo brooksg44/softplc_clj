@@ -9,14 +9,20 @@ sequenceDiagram
     participant PR as Pull Request
 
     Developer->>GitHubUI: Create new repository
+    Note over Developer: On GitHub: New repository → Enter name → Create
     GitHubUI->>GitRepo: Initialize repository
     GitRepo-->>GitHubUI: Repository created
     GitHubUI-->>Developer: Repository ready
+    
+    Note over Developer: Can also initialize with: git init
+    Note over Developer: git remote add origin https://github.com/user/repo.git
 
-    Developer->>GitRepo: Clone repository
+    Developer->>GitRepo: Clone repository (git clone https://github.com/user/repo.git)
     GitRepo-->>Developer: Repository cloned locally
 
-    Developer->>GitRepo: Push code to main branch
+    Note over Developer: git add .
+    Note over Developer: git commit -m "Initial commit"
+    Developer->>GitRepo: Push code to main branch (git push origin main)
     GitRepo-->>Actions: Code push detected
     
     par Automated Actions
@@ -31,13 +37,19 @@ sequenceDiagram
     end
 
     Developer->>GitHubUI: Create issue
+    Note over Developer: On GitHub: Issues → New issue → Enter details → Submit
     GitHubUI->>Issues: Store issue
     Issues-->>GitHubUI: Issue #123 created
     GitHubUI-->>Developer: Issue created
+    
+    Note over Developer: Later reference issue in commit:
+    Note over Developer: git commit -m "Fix issue #123"
 
-    Developer->>GitRepo: Create feature branch
-    Developer->>GitRepo: Commit changes
-    Developer->>GitRepo: Push feature branch
+    Developer->>GitRepo: Create feature branch (git checkout -b feature/new-feature)
+    Note over Developer: Make code changes
+    Note over Developer: git add .
+    Note over Developer: git commit -m "Add new feature"
+    Developer->>GitRepo: Push feature branch (git push -u origin feature/new-feature)
     
     Developer->>GitHubUI: Create pull request
     GitHubUI->>PR: Create PR from feature to main
@@ -61,8 +73,14 @@ sequenceDiagram
     GitHubUI-->>Developer: PR checks complete
 
     Developer->>GitHubUI: Request code review
+    Note over Developer: On GitHub: PR → Reviewers → Add reviewers
     GitHubUI->>PR: Add reviewers
     PR-->>GitHubUI: Reviewers notified
+    
+    Note over Developer: Address review comments:
+    Note over Developer: git add .
+    Note over Developer: git commit -m "Address review feedback"
+    Note over Developer: git push origin feature/new-feature
     
     Developer->>GitHubUI: Merge pull request
     GitHubUI->>PR: Validate merge requirements
@@ -71,6 +89,10 @@ sequenceDiagram
     GitRepo-->>PR: Merge complete
     PR-->>GitHubUI: PR closed
     GitHubUI-->>Developer: PR merged successfully
+    
+    Note over Developer: git checkout main
+    Note over Developer: git pull origin main
+    Note over Developer: git branch -d feature/new-feature
     
     Actions->>CI: Trigger deployment workflow
     CI->>CI: Build release artifact
