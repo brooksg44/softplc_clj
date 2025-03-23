@@ -1,0 +1,77 @@
+sequenceDiagram
+    participant Developer
+    participant GitHubUI as GitHub UI
+    participant GitRepo as Git Repository
+    participant Actions as GitHub Actions
+    participant CodeQL as CodeQL Analysis
+    participant CI as CI/CD Pipeline
+    participant Issues as GitHub Issues
+    participant PR as Pull Request
+
+    Developer->>GitHubUI: Create new repository
+    GitHubUI->>GitRepo: Initialize repository
+    GitRepo-->>GitHubUI: Repository created
+    GitHubUI-->>Developer: Repository ready
+
+    Developer->>GitRepo: Clone repository
+    GitRepo-->>Developer: Repository cloned locally
+
+    Developer->>GitRepo: Push code to main branch
+    GitRepo-->>Actions: Code push detected
+    
+    par Automated Actions
+        Actions->>CodeQL: Trigger security scan
+        CodeQL-->>Actions: Security analysis results
+        
+        Actions->>CI: Trigger build pipeline
+        CI->>CI: Build, lint & run tests
+        CI-->>Actions: Build status & test results
+        
+        Actions-->>GitHubUI: Update workflow status
+    end
+
+    Developer->>GitHubUI: Create issue
+    GitHubUI->>Issues: Store issue
+    Issues-->>GitHubUI: Issue #123 created
+    GitHubUI-->>Developer: Issue created
+
+    Developer->>GitRepo: Create feature branch
+    Developer->>GitRepo: Commit changes
+    Developer->>GitRepo: Push feature branch
+    
+    Developer->>GitHubUI: Create pull request
+    GitHubUI->>PR: Create PR from feature to main
+    PR->>GitRepo: Fetch branch differences
+    
+    GitRepo-->>PR: Branch comparison results
+    PR-->>GitHubUI: PR #456 created
+    GitHubUI-->>Developer: PR created
+
+    PR->>Actions: Trigger PR workflow
+    
+    par PR Checks
+        Actions->>CodeQL: Run security scan on PR
+        CodeQL-->>PR: Security analysis results
+        
+        Actions->>CI: Run tests on PR
+        CI-->>PR: Test results & coverage
+    end
+    
+    PR-->>GitHubUI: Update PR status
+    GitHubUI-->>Developer: PR checks complete
+
+    Developer->>GitHubUI: Request code review
+    GitHubUI->>PR: Add reviewers
+    PR-->>GitHubUI: Reviewers notified
+    
+    Developer->>GitHubUI: Merge pull request
+    GitHubUI->>PR: Validate merge requirements
+    PR->>GitRepo: Merge feature into main
+    
+    GitRepo-->>PR: Merge complete
+    PR-->>GitHubUI: PR closed
+    GitHubUI-->>Developer: PR merged successfully
+    
+    Actions->>CI: Trigger deployment workflow
+    CI->>CI: Build release artifact
+    CI-->>Developer: Deployment complete
